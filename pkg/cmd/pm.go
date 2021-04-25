@@ -1,7 +1,9 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"math"
 	"strconv"
 
@@ -12,8 +14,10 @@ import (
 type (
 	// PM has the options to tailor the comparisonn
 	PM struct {
+		Queryfile string   `help:"Specify location of file containing PM queries"`
 		Bookmaker string   `help:"Specify the bookmaker to compare the odds for"`
 		Oddslimit float64  `help:"Specify the virtual odds of win / ql as a filter"`
+		QLLimit   float64  `help:"Specify the maximum qualifying loss wanted as a filter"`
 		Exchanges []string `help:"Specify a comma separated list of exchanges to compare layodds with"`
 		BackStake float64  `help:"Specify the amount to bet off the back bet on the fixture"`
 		Interval  int      `help:"Specify the number of hours into the future to look for fixtures"`
@@ -23,16 +27,23 @@ type (
 // Run the compare command to obtain the odds and filter based on options
 func (c *PM) Run(globals *Globals) error {
 	apic := api.NewOddsAPI(globals.APIKey)
+	queryDetails, err := parseQuery(c.Queryfile)
+	if err != nil {
+		return err
+	}
 
 	rawreport := []types.OddsReport{}
 	// fixtures, err := apic.RetrievePMFromFile("pm.json")
-	fixtures, err := apic.RetrievePM(c.Interval)
+	fixtures, err := apic.RetrievePM(queryDetails, c.Interval)
 	if err != nil {
 		fmt.Printf("Error returned %v\n", err)
 	}
 
 	for _, event := range fixtures.Events {
 		if event.Team == "Draw" {
+			continue
+		}
+		if event.Exchange != "Betfair" {
 			continue
 		}
 		event.BackOdds, _ = strconv.ParseFloat(event.BackString, 64)
@@ -46,7 +57,7 @@ func (c *PM) Run(globals *Globals) error {
 	// Sort the report into fixtures
 	report := []types.OddsReport{}
 	for idx1, rep1 := range rawreport {
-		if rep1.Added == true {
+		if rep1.Added {
 			continue
 		}
 		for idx2, rep2 := range rawreport {
@@ -104,7 +115,7 @@ func (c *PM) validateCriteria(backodds, layodds, comm float64) *types.OddsInform
 	laystake, ql := c.calculateQualifyingLoss(backodds, layodds, comm)
 	profit, odds := c.calculateOutcomeOdds(backodds, laystake, ql, comm)
 
-	if odds > c.Oddslimit {
+	if odds > c.Oddslimit && (ql <= c.QLLimit || c.QLLimit == 0) {
 		return &types.OddsInformation{
 			ComparativeOdds: odds,
 			QualifyingLoss:  ql,
@@ -137,4 +148,15 @@ func (c *PM) calculateOutcomeOdds(backodds, laystake, ql, commission float64) (f
 		odds = 0
 	}
 	return math.Round(profit*100) / 100, math.Round(odds*100) / 100
+}
+
+func parseQuery(queryFile string) (*types.Query, error) {
+	queryBytes, err := ioutil.ReadFile(queryFile)
+	if err != nil {
+		return nil, err
+	}
+	query := types.Query{}
+	_ = json.Unmarshal(queryBytes, &query)
+	fmt.Printf("Parsed query: %#v\n", query)
+	return &query, nil
 }

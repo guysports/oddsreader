@@ -64,6 +64,7 @@ func (c *Compare) comparePrices(bookmaker string, exchanges []string, fixture ty
 	}
 
 	// Get bookmaker, betfair, smarkets and matchbook site objects
+	fmt.Printf("Exchanges %v\n", exchanges)
 	for _, exchange := range exchanges {
 
 		var oddsInfo *types.OddsInformation

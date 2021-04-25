@@ -1,5 +1,7 @@
 package types
 
+import "net/http"
+
 type (
 	// Odds - holds the home/draw/away odds and lay odds if exchange
 	Odds struct {
@@ -72,5 +74,13 @@ type (
 		LayString  string `json:"betfair_odds"`
 		BackOdds   float64
 		LayOdds    float64
+	}
+
+	// Query - holds the information parsed from the queryfile about HTTPS query to make
+	Query struct {
+		BaseUri string        `json:"base_uri"`
+		Referer string        `json:"referer"`
+		Host    string        `json:"host"`
+		Cookies []http.Cookie `json:"cookies"`
 	}
 )
