@@ -159,6 +159,7 @@ func parseQuery(queryFile string) (*types.Query, error) {
 	}
 	query := types.Query{}
 	_ = json.Unmarshal(queryBytes, &query)
+<<<<<<< HEAD
 	return &query, nil
 }
 
@@ -182,3 +183,8 @@ func sortReport(criteria string, report []types.OddsReport) {
 		break
 	}
 }
+=======
+	fmt.Printf("Parsed query: %#v\n", query)
+	return &query, nil
+}
+>>>>>>> 0931fcee205f5d0b4604876e2a0d7a94b80269a6

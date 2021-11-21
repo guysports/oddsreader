@@ -1,8 +1,5 @@
 module github.com/guysports/oddsreader
 
-go 1.15
+go 1.16
 
-require (
-	github.com/alecthomas/kong v0.2.17
-	github.com/mitchellh/mapstructure v1.1.2 // indirect
-)
+require github.com/alecthomas/kong v0.2.17
